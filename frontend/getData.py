@@ -11,9 +11,15 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DB_PATH = os.path.join(PROJECT_ROOT, 'instance', 'basketball.db')
 QUERIES_DIR = os.path.join(PROJECT_ROOT, 'referenceQueries')
 
+_QUERY_CACHE = {}
+
 def read_query(filename):
+    if filename in _QUERY_CACHE:
+        return _QUERY_CACHE[filename]
     with open(os.path.join(QUERIES_DIR, filename), 'r') as file:
-        return file.read()
+        content = file.read()
+    _QUERY_CACHE[filename] = content
+    return content
 
 def get_conference_name(conference_number):
     if 1 <= conference_number <= 63:
@@ -66,18 +72,27 @@ class TursoCursor:
     def close(self):
         pass
 
-class TursoConnection:
-    def __init__(self, url, auth_token):
+_GLOBAL_TURSO_CLIENT = None
+
+def _get_turso_client(url, auth_token):
+    global _GLOBAL_TURSO_CLIENT
+    if _GLOBAL_TURSO_CLIENT is None:
         import libsql_client
         if url and url.startswith("libsql://"):
             url = "https://" + url[len("libsql://"):]
-        self.client = libsql_client.create_client_sync(url=url, auth_token=auth_token)
+        _GLOBAL_TURSO_CLIENT = libsql_client.create_client_sync(url=url, auth_token=auth_token)
+    return _GLOBAL_TURSO_CLIENT
+
+class TursoConnection:
+    def __init__(self, url, auth_token):
+        self.client = _get_turso_client(url, auth_token)
 
     def cursor(self):
         return TursoCursor(self.client)
 
     def close(self):
-        self.client.close()
+        # Keep client connection open across queries
+        pass
 
 def get_connection():
     url = os.environ.get("TURSO_DATABASE_URL", TURSO_DATABASE_URL)

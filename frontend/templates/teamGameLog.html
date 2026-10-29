@@ -317,10 +317,10 @@
                     </thead>
                         <tr>
                         <td> {{game.G_Num}}</td>     
-                        <td><a href="/games/{{game.game_id}}" target="_blank">{{game.game_date}}</a></td>
+                        <td><a href="/games/{{game.game_id}}">{{game.game_date}}</a></td>
                         <td>{{game.game_type}}</td>
                         <td>{{game.team_location}}</td>
-                        <td><a href="/teams/{{game.opp_id}}/{{season_id}}/College" target="_blank">{{game.opp_name}}</a></td>
+                        <td><a href="/teams/{{game.opp_id}}/{{season_id}}/College">{{game.opp_name}}</a></td>
                         <td>
                                 {% if game.outcome == 1 %}
                                 W
