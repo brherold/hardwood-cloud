@@ -177,30 +177,68 @@
         </div>
         <p><b>Conference:</b> <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{ team_stats.conference_name or get_conference_name(team_stats.conference_id) }}</a></p>
         <h2> Roster </h2>
-        <table>
-            <thead>
-                <tr >
-                    <th>Player</th>
-                    <th>Position</th>
-                    <th>Ht</th>
-                    <th>Wt</th>
-                    <th>SI</th>
-                    <th>Class</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for player in roster %}
-                <tr >
-                    <td><a href="http://onlinecollegebasketball.org/player/{{player.player_id}}" target="_blank">{{ player.name }}</a></td>
-                    <td>{{ player.Pos }}</td>
-                    <td>{{ player.height }}</td>
-                    <td>{{ player.weight }}</td>
-                    <td>{{ player.SI }}</td>
-                    <td>{{ player.Class }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <div class="scroll-container" style="overflow-x: auto; max-width: 100%; margin: 8px 0 20px 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Pos</th>
+                        <th>Class</th>
+                        <th>Ht</th>
+                        <th>Wt</th>
+                        <th>Wingspan</th>
+                        <th>Vertical</th>
+                        <th>IS</th>
+                        <th>OS</th>
+                        <th>Rng</th>
+                        <th>Fin</th>
+                        <th>Reb</th>
+                        <th>IDef</th>
+                        <th>PDef</th>
+                        <th>IQ</th>
+                        <th>Pass</th>
+                        <th>Hnd</th>
+                        <th>Drv</th>
+                        <th>Str</th>
+                        <th>Spd</th>
+                        <th>Sta</th>
+                        <th>SI</th>
+                        <th>POT</th>
+                        <th>Stars</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for player in roster %}
+                    <tr>
+                        <td><a href="http://onlinecollegebasketball.org/player/{{player.player_id}}" target="_blank">{{ player.name }}</a></td>
+                        <td>{{ player.Pos }}</td>
+                        <td>{{ player.Class }}</td>
+                        <td>{{ player.height }}</td>
+                        <td>{{ player.weight }}</td>
+                        <td>{{ player.wingspan }}</td>
+                        <td>{{ player.vertical }}</td>
+                        <td>{{ player.IS }}</td>
+                        <td>{{ player.OS }}</td>
+                        <td>{{ player.Rng }}</td>
+                        <td>{{ player.Fin }}</td>
+                        <td>{{ player.Reb }}</td>
+                        <td>{{ player.IDef }}</td>
+                        <td>{{ player.PDef }}</td>
+                        <td>{{ player.IQ }}</td>
+                        <td>{{ player.Pass }}</td>
+                        <td>{{ player.Hnd }}</td>
+                        <td>{{ player.Drv }}</td>
+                        <td>{{ player.Str }}</td>
+                        <td>{{ player.Spd }}</td>
+                        <td>{{ player.Sta }}</td>
+                        <td>{{ player.SI }}</td>
+                        <td>{{ player.POT }}</td>
+                        <td>{{ player.Stars }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <h2><a href="/teams/{{team_stats['team_id']}}/{{team_stats['season_id']}}/gamelog">Game Log</a></h2>
 
