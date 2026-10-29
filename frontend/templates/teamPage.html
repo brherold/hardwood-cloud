@@ -182,43 +182,43 @@
         <p><b>Conference:</b> <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{ team_stats.conference_name or get_conference_name(team_stats.conference_id) }}</a></p>
         <h2> Roster </h2>
         <p style="font-size: 11px; color: #555; margin: 4px 0 8px 0;">
-            <b>Bolded players</b> played in &ge; 50% of team games ({{ (team_stats.GP * 0.5)|round(1) }}+ GP).
+            <b>Bolded players</b> played in &ge; 50% of team games. ⭐ denotes primary starters (started in &gt; 50% of team games).
         </p>
         <div class="scroll-container" style="overflow-x: auto; max-width: 100%; margin: 8px 0 20px 0;">
             <table>
                 <thead>
                     <tr>
                         <th>Player</th>
-                        <th>Position</th>
-                        <th>Pos</th>
-                        <th>Class</th>
-                        <th>Ht</th>
-                        <th>Wt</th>
-                        <th>Wingspan</th>
-                        <th>Vertical</th>
-                        <th>IS</th>
-                        <th>OS</th>
-                        <th>Rng</th>
-                        <th>Fin</th>
-                        <th>Reb</th>
-                        <th>IDef</th>
-                        <th>PDef</th>
-                        <th>IQ</th>
-                        <th>Pass</th>
-                        <th>Hnd</th>
-                        <th>Drv</th>
-                        <th>Str</th>
-                        <th>Spd</th>
-                        <th>Sta</th>
-                        <th>SI</th>
-                        <th>POT</th>
-                        <th>Stars</th>
+                        <th title="Primary Position Played">Position</th>
+                        <th title="Eligible Positions">Pos</th>
+                        <th title="Class Year">Class</th>
+                        <th title="Height">Ht</th>
+                        <th title="Weight">Wt</th>
+                        <th title="Wingspan">Wingspan</th>
+                        <th title="Vertical">Vertical</th>
+                        <th title="Inside Scoring">IS</th>
+                        <th title="Outside Scoring">OS</th>
+                        <th title="Range">Rng</th>
+                        <th title="Finishing">Fin</th>
+                        <th title="Rebounding">Reb</th>
+                        <th title="Interior Defense">IDef</th>
+                        <th title="Perimeter Defense">PDef</th>
+                        <th title="Basketball IQ">IQ</th>
+                        <th title="Passing">Pass</th>
+                        <th title="Handling">Hnd</th>
+                        <th title="Driving">Drv</th>
+                        <th title="Strength">Str</th>
+                        <th title="Speed">Spd</th>
+                        <th title="Stamina">Sta</th>
+                        <th title="Skill Index">SI</th>
+                        <th title="Potential">POT</th>
+                        <th title="Stars">Stars</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for player in roster %}
                     <tr {% if player.highlight %}class="highlight-player"{% endif %}>
-                        <td><a href="http://onlinecollegebasketball.org/player/{{player.player_id}}" target="_blank">{{ player.name }}</a></td>
+                        <td>{% if player.is_starter %}<span title="Starter (started > 50% of team games)" style="cursor: help; margin-right: 3px;">⭐</span>{% endif %}<a href="http://onlinecollegebasketball.org/player/{{player.player_id}}" target="_blank">{{ player.name }}</a></td>
                         <td>{{ player.Primary_Position or '-' }}</td>
                         <td>{{ player.Pos }}</td>
                         <td>{{ player.Class }}</td>
