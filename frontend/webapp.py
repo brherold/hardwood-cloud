@@ -118,6 +118,51 @@ def home():
         return render_template('home.html', error=f"Team '{raw_code}' not found.")
 
     return render_template('home.html')
+def compute_historical_depth_chart(team_player_avg):
+    """Estimates historical depth chart (Starter, Backup, Reserve) across PG, SG, SF, PF, C."""
+    positions = ["PG", "SG", "SF", "PF", "C"]
+    depth_by_pos = {}
+
+    for pos in positions:
+        min_col = f"{pos}_Min"
+        candidates = []
+        for p in team_player_avg:
+            pos_min = p.get(min_col) or 0.0
+            gp = p.get("GP") or 0
+            gs = p.get("GS") or 0
+            total_pos_min = pos_min * gp
+            pos_gs = gs if p.get("Primary_Position") == pos else 0
+
+            if total_pos_min > 0 or pos_gs > 0:
+                candidates.append({
+                    "name": p["name"],
+                    "player_id": p["player_id"],
+                    "primary_pos": p.get("Primary_Position"),
+                    "gs": gs,
+                    "pos_gs": pos_gs,
+                    "gp": gp,
+                    "pos_min": pos_min,
+                    "total_pos_min": total_pos_min
+                })
+
+        # Prioritize starts at position, total position minutes, position mpg, and overall GP
+        candidates.sort(
+            key=lambda x: (x["pos_gs"], x["total_pos_min"], x["pos_min"], x["gp"]),
+            reverse=True
+        )
+        depth_by_pos[pos] = candidates
+
+    tiers = ["Starter", "Backup", "Reserve"]
+    depth_chart_rows = []
+    for idx, tier_name in enumerate(tiers):
+        row = {"tier": tier_name, "positions": {}}
+        for pos in positions:
+            cand_list = depth_by_pos.get(pos, [])
+            row["positions"][pos] = cand_list[idx] if len(cand_list) > idx else None
+        depth_chart_rows.append(row)
+
+    return depth_chart_rows
+
 #Route to get to Team Stats for Given year
 @app.route("/teams/<code>/<season_year>/<game_type>")
 @app.route('/teams/<code>/<season_year>', methods=['GET', 'POST'], defaults={'game_type': 'College'})
@@ -160,7 +205,8 @@ def teamStats(code, season_year, game_type):
         player["Primary_Position"] = player_pos_map.get(pid, "-")
         player["highlight"] = (p_gp >= gp_threshold and team_gp > 0)
         player["is_starter"] = (p_gs > gp_threshold and team_gp > 0)
-    return render_template('teamPage.html', team_code= code, season_id = season_id, game_type = game_type, roster=roster, team_stats=team_avg, opp_stats=opp_avg, player_stats=team_player_avg, team_offense = team_offense, team_defense=team_defense, team_rank=team_rank, opp_rank=opp_rank)
+    depth_chart = compute_historical_depth_chart(team_player_avg)
+    return render_template('teamPage.html', team_code= code, season_id = season_id, game_type = game_type, roster=roster, depth_chart=depth_chart, team_stats=team_avg, opp_stats=opp_avg, player_stats=team_player_avg, team_offense = team_offense, team_defense=team_defense, team_rank=team_rank, opp_rank=opp_rank)
 
 #Route to get to Game Log for given year
 @app.route('/teams/<code>/<season_year>/gamelog')
