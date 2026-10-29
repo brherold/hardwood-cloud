@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <style>
+            body {
+                max-width: 1450px; /* Constrains page width */
+                margin: 20px auto; /* Centers the content */
+                padding: 20px;
+                border: 1px solid #ddd; /* Outer border for entire page */
+                box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Optional subtle shadow */;
+                
+            }
+    
+            h1, h2 {
+                color: #000;
+                font-weight: normal;
+            }
+    
+            h1 {
+                font-size: 24px;
+            }
+    
+            h2 {
+                font-size: 20px;
+                border-bottom: 1px solid #aaa;
+                padding-bottom: 4px;
+                margin-top: 30px;
+            }
+                /* Roster table specific styling */
+            h2:first-of-type + table {
+                width: auto;
+                margin-left: 0;
+            }
+
+            /* Header styling for grouped headers */
+            thead tr:first-child {
+                background-color: #f0f0f0;
+                font-weight: bold;
+                text-align: center;
+            }
+    
+            a {
+                color: #0645AD;
+                text-decoration: underline;
+            }
+    
+            table {
+                width: auto; /* Let tables size to content */
+                max-width: 100%; /* But don't exceed container */
+                margin: 10px 0; /* Vertical spacing only */
+                border: 1px solid #a0a0a0;  /* Darker gray border */
+                font-family: Verdana, sans-serif;
+                font-size: 11px;
+                border-collapse: collapse;
+                
+            }
+    
+            th, td {
+                border: 1px solid #a0a0a0;
+                padding: 4px 6px;
+                text-align: center;
+            }
+            td {
+                white-space: nowrap;        /* Prevent text wrapping */
+                overflow: hidden;           /* Hide overflow */
+                text-overflow: ellipsis;    /* Show ... if text is cut off */
+                max-width: 200px;           /* Set maximum cell width */
+                padding: 4px 8px;           /* Add some padding */
+            }
+
+    
+            th {
+                background-color: #eee;
+                font-weight: bold;
+                cursor: pointer;
+                position: relative;
+                color: #900;
+
+            }
+    
+            th.sort-asc::after {
+                content: "↑";
+                position: absolute;
+                right: 5px;
+            }
+    
+            th.sort-desc::after {
+                content: "↓";
+                position: absolute;
+                right: 5px;
+            }
+    
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+    
+            tr:hover {
+                background-color: hsla(40,100%,70%,1.0);
+            }
+    
+            .team-totals-row {
+                font-weight: bold;
+                background-color: #ddd;
+            }
+            /* Bolds and Greys Team Totals Row */
+            tr[data-no-sort] {
+                font-weight: bold;
+                background-color: #f0f0f0; /* Light grey background */
+            }
+
+            /* Optional: If you want to maintain the hover effect on Team Totals */
+            tr[data-no-sort]:hover {
+                background-color: #e0e0e0; /* Slightly darker grey on hover */
+            }
+        </style>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // ===== TABLE SORTING ONLY =====
+                function sortTable(th) {
+                    const table = th.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr:not([data-no-sort])'));
+                    const teamTotalRows = Array.from(tbody.querySelectorAll('tr[data-no-sort]'));
+                    const colIndex = Array.from(th.parentNode.children).indexOf(th);
+                    
+                    // Determine sort direction
+                    const isAsc = th.classList.contains('sort-asc');
+                    const isDesc = th.classList.contains('sort-desc');
+                    
+                    // Clear sort classes
+                    table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                    
+                    // Set new direction
+                    const dir = !isAsc && !isDesc ? 'asc' : isAsc ? 'desc' : 'asc';
+                    th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        const aVal = a.children[colIndex].textContent.trim();
+                        const bVal = b.children[colIndex].textContent.trim();
+                        const aNum = parseFloat(aVal.replace('%', ''));
+                        const bNum = parseFloat(bVal.replace('%', ''));
+                        
+                        return (!isNaN(aNum) && !isNaN(bNum))
+                            ? (dir === 'asc' ? aNum - bNum : bNum - aNum)
+                            : dir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    });
+            
+                    // Rebuild table
+                    rows.forEach(row => tbody.appendChild(row));
+                    teamTotalRows.forEach(row => tbody.appendChild(row));
+                }
+            
+                // Initialize sorting headers
+                document.querySelectorAll('table th:not([data-no-sort])').forEach(th => {
+                    th.addEventListener('click', () => sortTable(th));
+                });
+            });
+            </script>
+
+    </head>
+    <body>
+        <h1>Conf: {{conference_id}} {{season_id}}</h1>
+        <h2> Conference standings</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th> W </th>
+                    <th> L</th>
+                    <th> Pct </th>
+                    <th> GB </th>
+                    <th> PF </th>
+                    <th> PA </th>
+                    <th> PD </th>
+                    <th> EPM </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for team_stats in conf_stats %}
+                <tr>
+                    <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                    <td> {{team_stats.GW}}</td>
+                    <td> {{team_stats.GP - team_stats.GW}}</td>
+                    <td>{{"%.3f"|format(team_stats.GW / team_stats.GP)|default(0) if (team_stats.GW / team_stats.GP) >= 1 else "%.3f"|format(team_stats.GW / team_stats.GP)|replace("0.",".")}}   </td>
+                    <td> {{team_stats.GB}}</td>
+                    <td> {{"%.1f"|format(team_stats.PTS)}}</td>
+                    <td> {{"%.1f"|format(team_stats.O_PTS)}}</td>
+                    <td> {{"%.1f"|format(team_stats.PTS - team_stats.O_PTS)}}</td>
+                    <td> {{"%.1f"|format(team_stats.BPM)}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            
+        </table>
+
+        <h2> Per Game Stats</h2>
+        <table>
+            <thead>
+                <tr>
+                        <th>Team </th>
+                        <th>G</th>
+                        <th> Min </th>
+                        <th> FG </th>
+                        <th> FGA </th>
+                        <th> eFG% </th>
+                        <th> 3P </th>
+                        <th> 3PA </th>
+                        <th> 3P% </th>
+                        <th> 2P </th>
+                        <th> 2PA </th>
+                        <th> 2P%</th>
+                        <th> FT </th>
+                        <th> FTA </th>
+                        <th> FT%</th>
+                        <th> Off</th>
+                        <th> Def </th>
+                        <th> Reb </th>
+                        <th> AST </th>
+                        <th> STL </th>
+                        <th> BLK </th>
+                        <th> TO </th>
+                        <th> PF </th>
+                        <th> FD </th>
+                        <th> FBP </th>
+                        <th> PITP</th>
+                        <th> DIST </th>
+                        <th> PTS </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for team_stats in conf_stats %}
+                <tr>
+                    <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                        <td>{{ team_stats.GP }}</td>
+                        <td>{{ team_stats.Min|round(1) }}</td>
+                        <td>{{ team_stats.FG_M|round(1) }}</td>
+                        <td>{{ team_stats.FG_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(team_stats.eFG_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ team_stats._3P_M|round(1) }}</td>
+                        <td>{{ team_stats._3P_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ team_stats._2P_M|round(1) }}</td>
+                        <td>{{ team_stats._2P_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(team_stats._2P_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ team_stats.FT_M|round(1) }}</td>
+                        <td>{{ team_stats.FT_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(team_stats.FT_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ team_stats.Off|round(1) }}</td>
+                        <td>{{ team_stats.Def|round(1) }}</td>
+                        <td>{{ team_stats.Rebs|round(1) }}</td>
+                        <td>{{ team_stats.AST|round(1) }}</td>
+                        <td>{{ team_stats.STL|round(1) }}</td>
+                        <td>{{ team_stats.BLK|round(1) }}</td>
+                        <td>{{ team_stats.TO|round(1) }}</td>
+                        <td>{{ team_stats.PF|round(1) }}</td>
+                        <td>{{ team_stats.FD|round(1) }}</td>
+                        <td>{{ team_stats.FBP|round(1) }}</td>
+                        <td>{{team_stats.PITP|round(1)}}</td>
+                        <td>{{team_stats.DIST|round(1)}}</td>
+                        <td>{{ team_stats.PTS|round(1) }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            
+            
+
+        </table>
+
+        <h2> Per 100 Poss</h2>
+        <table>
+            <thead>
+                <tr>
+                        <th>Team </th>
+                        <th>G</th>
+                        <th> Min </th>
+                        <th> FG </th>
+                        <th> FGA </th>
+                        <th> eFG% </th>
+                        <th> 3P </th>
+                        <th> 3PA </th>
+                        <th> 3P% </th>
+                        <th> 2P </th>
+                        <th> 2PA </th>
+                        <th> 2P%</th>
+                        <th> FT </th>
+                        <th> FTA </th>
+                        <th> FT%</th>
+                        <th> Off</th>
+                        <th> Def </th>
+                        <th> Reb </th>
+                        <th> AST </th>
+                        <th> STL </th>
+                        <th> BLK </th>
+                        <th> TO </th>
+                        <th> PF </th>
+                        <th> FD </th>
+                        <th> FBP </th>
+                        <th> PITP</th>
+                        <th> DIST </th>
+                        <th> PTS </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for team_stats in conf_stats %}
+                <tr>
+                <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                <td>{{ team_stats.GP }}</td>
+                <td>{{ team_stats.Min|round(1) }}</td>
+                <td>{{ (100 * team_stats.FG_M / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.FG_A / team_stats.Poss)|round(1) }}</td>
+                <td>{{ "%.3f"|format(team_stats.eFG_P|default(0))|replace("0.",".") }}</td>
+                <td>{{ (100 * team_stats._3P_M / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats._3P_A / team_stats.Poss)|round(1) }}</td>
+                <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
+                <td>{{ (100 * team_stats._2P_M / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats._2P_A / team_stats.Poss)|round(1) }}</td>
+                <td>{{ "%.3f"|format(team_stats._2P_P|default(0))|replace("0.",".") }}</td>
+                <td>{{ (100 * team_stats.FT_M / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.FT_A / team_stats.Poss)|round(1) }}</td>
+                <td>{{ "%.3f"|format(team_stats.FT_P|default(0))|replace("0.",".") }}</td>
+                <td>{{ (100 * team_stats.Off / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.Def / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.Rebs / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.AST / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.STL / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.BLK / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.TO / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.PF / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.FD / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.FBP / team_stats.Poss)|round(1) }}</td>
+                <td>{{ (100 * team_stats.PITP / team_stats.Poss)|round(1) }}</td>
+                <td>{{team_stats.DIST|round(1)}}</td>
+                <td>{{ (100 * team_stats.PTS / team_stats.Poss)|round(1) }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            
+            
+
+        </table>
+
+        <h2> Advanced Stats</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="14"></th>
+                    <th colspan="4">Offensive Four Factors</th>
+                    <th colspan="1"></th>
+                    <th colspan="4">Defensive Four Factors</th>
+                </tr>
+                <tr>
+                    <th>Team </th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th> RPI  </th>
+                    <th> SOS </th>
+                    <th> EPM </th>
+                    <th> ORtg </th>
+                    <th> DRtg </th>
+                    <th>NETRTG</th>
+                    <th> Pace </th>
+                    <th> FTr </th>
+                    <th> 3PAr </th>
+                    <th> TS% </th>
+                    <th></th>
+                    <th> eFG% </th>
+                    <th> TOV% </th>
+                    <th> ORB% </th>
+                    <th> FT/FGA </th>
+                    <th></th>
+                    <th> eFG% </th>
+                    <th> TOV% </th>
+                    <th> DRB% </th>
+                    <th> FT/FGA </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for team_stats in conf_stats %}
+                <tr>
+                <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                    <td>{{team_stats.GW}}</td>
+                    <td>{{team_stats.GP - team_stats.GW}}</td>
+                    <td>
+                        {% if team_stats["season_id"] > 2044 %}
+                            {% if team_stats.RPI >= 1 %}
+                                {{ "%.3f"|format(team_stats.RPI)|default(0) }}
+                            {% else %}
+                                {{ "%.3f"|format(team_stats.RPI)|replace("0.", ".") }}
+                            {% endif %}
+                        {% else %}
+                            
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if team_stats["season_id"] > 2044 %}
+                            {% if team_stats.SOS >= 1 %}
+                                {{ "%.3f"|format(team_stats.SOS)|default(0) }}
+                            {% else %}
+                                {{ "%.3f"|format(team_stats.SOS)|replace("0.", ".") }}
+                            {% endif %}
+                        {% else %}
+                            
+                        {% endif %}
+                    </td>
+                    <td>{{"%.1f"|format(team_stats.BPM|default(0))}}</td>
+                    <td>{{"%.1f"|format(team_stats.ORtg|default(0))}}</td>
+                    <td>{{"%.1f"|format(team_stats.DRtg|default(0))}}</td>
+                    <td>{{"%.1f"|format(team_stats.NetRtg|default(0))}}</td>
+                    <td>{{"%.1f"|format(team_stats.Poss|default(0))}}</td>
+                    <td>{{"%.3f"|format(team_stats.FTr)|default(0) if team_stats.FTr >= 1 else "%.3f"|format(team_stats.FTr)|replace("0.",".")}}</td>
+                    <td>{{"%.3f"|format(team_stats._3PAr)|default(0) if team_stats._3PAr >= 1 else "%.3f"|format(team_stats._3PAr)|replace("0.",".")}}</td>
+                    <td>{{"%.3f"|format(team_stats.TS)|default(0) if team_stats.TS >= 1 else "%.3f"|format(team_stats.TS)|replace("0.",".")}}</td>  
+                    <td></td>                  
+                    <td>{{"%.3f"|format(team_stats.eFG_P)|default(0) if team_stats.eFG_P >= 1 else "%.3f"|format(team_stats.eFG_P)|replace("0.",".")}}</td>
+                    <td>{{ "%.1f"|format(team_stats.TO_P|default(0)) if team_stats.TO_P >= 1 else "%.1f"|format(team_stats.TO_P|default(0))}}</td>
+                    <td>{{ "%.1f"|format(team_stats.ORB_P|default(0)) if team_stats.ORB_P >= 1 else "%.1f"|format(team_stats.ORB_P|default(0))}}</td>
+                    <td>{{"%.3f"|format(team_stats.FT_FG_A)|default(0) if team_stats.FT_FG_A >= 1 else "%.3f"|format(team_stats.FT_FG_A)|replace("0.",".")}}</td>
+                    <td></td>     
+                    <td>{{"%.3f"|format(team_stats.O_eFG_P)|default(0) if team_stats.O_eFG_P >= 1 else "%.3f"|format(team_stats.O_eFG_P)|replace("0.",".")}}</td>
+                    <td>{{ "%.1f"|format(team_stats.O_TO_P|default(0)) if team_stats.O_TO_P >= 1 else "%.1f"|format(team_stats.O_TO_P|default(0))}}</td>
+                    <td>{{ "%.1f"|format(team_stats.DRB_P|default(0)) if team_stats.DRB_P >= 1 else "%.1f"|format(team_stats.DRB_P|default(0))}}</td>
+                    <td>{{"%.3f"|format(team_stats.O_FT_FG_A)|default(0) if team_stats.O_FT_FG_A >= 1 else "%.3f"|format(team_stats.O_FT_FG_A)|replace("0.",".")}}</td>
+
+                </tr>
+            {% endfor %}
+            </tbody>
+            
+            
+
+        </table>
+
+        <h2> Shooting </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="5"></th>
+                    <th colspan="1"></th>
+                    <th colspan="4">% of FGA by Distance</th>
+                    <th colspan="1"></th>
+                    <th colspan="4">FG% by Distance</th>
+                    <th colspan="1"></th>
+                    <th colspan="3">Drives</th>
+                </tr>
+                <tr>
+                    <th>Team</th>
+                    <th>G</th>
+                    <th>Min</th>
+                    <th>eFG%</th>
+                    <th>DIST</th>
+                    <th></th>
+
+                    <th>2P</th>
+                    <th>Rim</th>
+                    <th>Mid</th>
+                    <th>3P</th>
+                    <th></th>
+
+                    <th>2P%</th>
+                    <th>Rim%</th>
+                    <th>Mid%</th>
+                    <th>3P%</th>
+                    <th></th>
+
+                    <th>DRV</th>
+                    <th>DRVA</th>
+                    <th>DRV%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team_stats in conf_stats %}
+                <tr>
+                    <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                    <td>{{ team_stats.GP }}</td>
+                    <td>{{ team_stats.Min|round(1) }}</td>
+                    <td>{{ "%.3f"|format(team_stats.eFG_P|default(0))|replace("0.",".") }}</td>
+                    <td>
+                        {% if team_stats.DIST != "-" and team_stats.DIST is not none %}
+                          {{ team_stats.DIST|round(1) }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                      <td></td>
+                      <td>{{ "%.3f"|format(team_stats._2PAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats.RimAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats.MidAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats._3PAr|default(0))|replace("0.",".") }}</td>
+                      <td></td>
+                      
+                    <td>{{ "%.3f"|format(team_stats._2P_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats.Rim_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats.Mid_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
+                    <td></td>
+
+                    <td>{{ team_stats.DR_M|default(0)|int }}</td>
+                    <td>{{ team_stats.DR_A|default(0)|int }}</td>
+                    <td>{{ "%.3f"|format(team_stats.DR_P|default(0))|replace("0.",".") }}</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+
+        <h2> Defense </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="5"></th>
+                    <th colspan="1"></th>
+                    <th colspan="4">% of Opp FGA by Distance</th>
+                    <th colspan="1"></th>
+                    <th colspan="4">Opp FG% by Distance</th>
+                </tr>
+                <tr>
+                    <th>Team</th>
+                    <th>G</th>
+                    <th>Min</th>
+                    <th>eFG%</th>
+                    <th>DIST</th>
+                    <th></th>
+
+                    <th>2P</th>
+                    <th>Rim</th>
+                    <th>Mid</th>
+                    <th>3P</th>
+                    <th></th>
+
+                    <th>2P%</th>
+                    <th>Rim%</th>
+                    <th>Mid%</th>
+                    <th>3P%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team_stats in conf_opp_stats %}
+                <tr>
+                    <td> <a href = "/teams/{{team_stats.team_id}}/{{season_id}}/Conference">{{team_stats.team_name}}</a> </td>
+                    <td>{{ team_stats.GP }}</td>
+                    <td>{{ team_stats.Min|round(1) }}</td>
+                    <td>{{ "%.3f"|format(team_stats.eFG_P|default(0))|replace("0.",".") }}</td>
+                    <td>
+                        {% if team_stats.DIST != "-" and team_stats.DIST is not none %}
+                          {{ team_stats.DIST|round(1) }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                      <td></td>
+                      <td>{{ "%.3f"|format(team_stats._2PAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats.RimAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats.MidAr|default(0))|replace("0.",".") }}</td>
+                      <td>{{ "%.3f"|format(team_stats._3PAr|default(0))|replace("0.",".") }}</td>
+                      <td></td>
+                      
+                    <td>{{ "%.3f"|format(team_stats._2P_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats.Rim_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats.Mid_P|default(0))|replace("0.",".") }}</td>
+                    <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+
+        
+
+    </body>
+</html>

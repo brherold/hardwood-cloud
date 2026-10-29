@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env
+.venv
+env/
+venv/
+
+# Database files (1.2 GB local database should not be pushed to GitHub)
+*.db
+*.db-shm
+*.db-wal
+instance/*.db
+instance/*.db-shm
+instance/*.db-wal
+
+# HTML caches
+backend/GamesHTML/
+backend/TeamsHTML/
+backend/TeamRosterPage/
+backend/TeamConferencePage/
+backend/copies/
+frontend/copies/
+
+# Logs
+*.log
+scraper.log
+
+# Operating system
+.DS_Store
+Thumbs.db

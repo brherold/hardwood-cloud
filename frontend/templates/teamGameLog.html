@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{{game_log[0]["team_name"]}} Stats</title>
+        <style>
+            body {
+                max-width: 100%; /* Constrains page width */
+                margin: 20px auto; /* Centers the content */
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Optional subtle shadow */;
+                
+            }
+
+    
+            h1, h2 {
+                color: #000;
+                font-weight: normal;
+            }
+    
+            h1 {
+                font-size: 24px;
+            }
+    
+            h2 {
+                font-size: 20px;
+                border-bottom: 1px solid #aaa;
+                padding-bottom: 4px;
+                margin-top: 30px;
+            }
+                /* Roster table specific styling */
+            h2:first-of-type + table {
+                width: auto;
+                margin-left: 0;
+            }
+
+            /* Header styling for grouped headers */
+            thead tr:first-child {
+                background-color: #f0f0f0;
+                font-weight: bold;
+                text-align: center;
+            }
+    
+            a {
+                color: #0645AD;
+                text-decoration: underline;
+            }
+            
+            /* Horizontal scrolling */
+            .table-container {
+                width: 100%;
+                position: relative;
+                margin: 10px 0;
+                border: 1px solid #a0a0a0;
+            }
+
+            .scroll-container {
+                overflow-x: auto;  /* Enable horizontal scrolling */
+                width: 100%;
+                margin-bottom: 10px;  /* Space below the scroll */
+            }
+
+            table {
+                width: 100%;  /* Make the table width 100% of the container */
+                max-width: none; /* Allow the table to be wider than the container */
+                border: 1px solid #a0a0a0;  /* Border for the table */
+                font-family: Verdana, sans-serif;
+                font-size: 11px;
+                border-collapse: collapse;
+            }
+    
+            th, td {
+                border: 1px solid #a0a0a0;
+                padding: 4px 6px;
+                text-align: center;
+            }
+            td {
+                white-space: nowrap;        /* Prevent text wrapping */
+                overflow: hidden;           /* Hide overflow */
+                text-overflow: ellipsis;    /* Show ... if text is cut off */
+                max-width: 200px;           /* Set maximum cell width */
+                padding: 4px 8px;           /* Add some padding */
+            }
+
+    
+            th {
+                background-color: #eee;
+                font-weight: bold;
+                cursor: pointer;
+                position: relative;
+                color: #900;
+
+            }
+    
+            th.sort-asc::after {
+                content: "↑";
+                position: absolute;
+                right: 5px;
+            }
+    
+            th.sort-desc::after {
+                content: "↓";
+                position: absolute;
+                right: 5px;
+            }
+    
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+    
+            tr:hover {
+                background-color: hsla(40,100%,70%,1.0);
+            }
+    
+            .team-totals-row {
+                font-weight: bold;
+                background-color: #ddd;
+            }
+            /* Bolds and Greys Team Totals Row */
+            tr[data-no-sort] {
+                font-weight: bold;
+                background-color: #f0f0f0; /* Light grey background */
+            }
+
+            /* Optional: If you want to maintain the hover effect on Team Totals */
+            tr[data-no-sort]:hover {
+                background-color: #e0e0e0; /* Slightly darker grey on hover */
+            }
+
+            .separator-right, th.separator-right, td.separator-right {
+                border-right: 2.5px solid #444 !important;
+            }
+
+            th[data-no-sort] {
+                cursor: default;
+                color: #000;
+            }
+        </style>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // ===== TABLE SORTING ONLY =====
+                function sortTable(th) {
+                    const table = th.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr:not([data-no-sort])'));
+                    const teamTotalRows = Array.from(tbody.querySelectorAll('tr[data-no-sort]'));
+                    const colIndex = Array.from(th.parentNode.children).indexOf(th);
+                    
+                    // Determine sort direction
+                    const isAsc = th.classList.contains('sort-asc');
+                    const isDesc = th.classList.contains('sort-desc');
+                    
+                    // Clear sort classes
+                    table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                    
+                    // Set new direction
+                    const dir = !isAsc && !isDesc ? 'asc' : isAsc ? 'desc' : 'asc';
+                    th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        const aVal = a.children[colIndex].textContent.trim();
+                        const bVal = b.children[colIndex].textContent.trim();
+                        const aNum = parseFloat(aVal.replace('%', ''));
+                        const bNum = parseFloat(bVal.replace('%', ''));
+                        
+                        return (!isNaN(aNum) && !isNaN(bNum))
+                            ? (dir === 'asc' ? aNum - bNum : bNum - aNum)
+                            : dir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    });
+            
+                    // Rebuild table
+                    rows.forEach(row => tbody.appendChild(row));
+                    teamTotalRows.forEach(row => tbody.appendChild(row));
+                }
+            
+                // Initialize sorting headers
+                document.querySelectorAll('table th:not([data-no-sort])').forEach(th => {
+                    th.addEventListener('click', () => sortTable(th));
+                });
+            });
+            </script>
+
+    </head>
+    <body>
+        <h1><a href="http://onlinecollegebasketball.org/team/{{game_log[0]['team_id']}}" target="_blank">{{game_log[0]["team_name"]}}</a>  Game Log</h1>
+        
+        <h2> {{season_id}} Games </h2>
+        
+        <div class="table-container">
+            <div class="scroll-container">
+                <table>
+                    <thead>
+                        <tr data-no-sort>
+                            <th colspan="5" data-no-sort></th>
+                            <th colspan="4" data-no-sort>Score</th>
+                            <th colspan="13" class="separator-right" data-no-sort>Team</th>
+                            <th colspan="12" data-no-sort>Opponent</th>
+                        </tr>
+                        <tr >
+                            <th>Grm</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Venue</th>
+                            <th>Opp</th>
+                            <th>Rslt</th>
+                            <th>Tm</th>
+                            <th>Opp</th>
+                            <th>OT</th>
+                            
+                            <th>Poss</th>
+                            <th>FG</th>
+                            <th>FGA</th>
+                            <th>eFG%</th>
+                            <th>RimAr</th>
+                            <th>MidAr</th>
+                            <th>3PAr</th>
+                            <th>Rim%</th>
+                            <th>Mid%</th>
+                            <th>3P%</th>
+                            <th>FTr</th>
+                            <th>TOV%</th>
+                            <th class="separator-right">ORB%</th>
+    
+                            <th>FG</th>
+                            <th>FGA</th>
+                            <th>eFG%</th>
+                            <th>RimAr</th>
+                            <th>MidAr</th>
+                            <th>3PAr</th>
+                            <th>Rim%</th>
+                            <th>Mid%</th>
+                            <th>3P%</th>
+                            <th>FTr</th>
+                            <th>TOV%</th>
+                            <th>ORB%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for game in game_log %}
+                    <thead>
+                        {% if game.G_Num % 10 == 0 %}
+                        <tr>
+                            <th>Grm</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Venue</th>
+                            <th>Opp</th>
+                            <th>Rslt</th>
+                            <th>Tm</th>
+                            <th>Opp</th>
+                            <th>OT</th>
+                            
+                            <th>Poss</th>
+                            <th>FG</th>
+                            <th>FGA</th>
+                            <th>eFG%</th>
+                            <th>RimAr</th>
+                            <th>MidAr</th>
+                            <th>3PAr</th>
+                            <th>Rim%</th>
+                            <th>Mid%</th>
+                            <th>3P%</th>
+                            <th>FTr</th>
+                            <th>TOV%</th>
+                            <th class="separator-right">ORB%</th>
+    
+                            <th>FG</th>
+                            <th>FGA</th>
+                            <th>eFG%</th>
+                            <th>RimAr</th>
+                            <th>MidAr</th>
+                            <th>3PAr</th>
+                            <th>Rim%</th>
+                            <th>Mid%</th>
+                            <th>3P%</th>
+                            <th>FTr</th>
+                            <th>TOV%</th>
+                            <th>ORB%</th>
+                        </tr>
+                        {% else %}
+                        {% endif %}
+                        
+                    </thead>
+                        <tr>
+                        <td> {{game.G_Num}}</td>     
+                        <td><a href="/games/{{game.game_id}}" target="_blank">{{game.game_date}}</a></td>
+                        <td>{{game.game_type}}</td>
+                        <td>{{game.team_location}}</td>
+                        <td><a href="/teams/{{game.opp_id}}/{{season_id}}/College" target="_blank">{{game.opp_name}}</a></td>
+                        <td>
+                                {% if game.outcome == 1 %}
+                                W
+                                {% else %}
+                                L
+                                {% endif %}
+                        </td>
+                        <td>{{game.PTS}}</td>
+                        <td>{{game.O_PTS|int }}</td>
+                        <td>
+                            {% if game.Min > 200 %}
+                            X
+                            {% else %}
+                            {% endif %}
+                        </td>
+                        <td>{{ game.Poss|round(1) }}</td>
+                        <td>{{ game.FG_M|round(1) }}</td>
+                        <td>{{ game.FG_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(game.eFG_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.RimAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.MidAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game._3PAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.Rim_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.Mid_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game._3P_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.FTr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.TOV_P|default(0))|replace("0.",".") }}</td>
+                        <td class="separator-right">{{ "%.3f"|format(game.ORB_P|default(0))|replace("0.",".") }}</td>
+                            
+                        <td>{{ game.O_FG_M|round(1) }}</td>
+                        <td>{{ game.O_FG_A|round(1) }}</td>
+                        <td>{{ "%.3f"|format(game.O_eFG_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_RimAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_MidAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_3PAr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_Rim_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_Mid_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_3P_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_FTr|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_TOV_P|default(0))|replace("0.",".") }}</td>
+                        <td>{{ "%.3f"|format(game.O_ORB_P|default(0))|replace("0.",".") }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+
+
+
+
+          <a href="{{ url_for('home') }}"><button>Home</button></a>
+          </body>
+          </html>
+        
+
+    </body>
+</html>
