@@ -2,7 +2,11 @@ import sqlite3
 import json
 import os
 from collections import defaultdict
-
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
+except Exception:
+    pass
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DB_PATH = os.path.join(PROJECT_ROOT, 'instance', 'basketball.db')
 QUERIES_DIR = os.path.join(PROJECT_ROOT, 'referenceQueries')
@@ -10,6 +14,7 @@ QUERIES_DIR = os.path.join(PROJECT_ROOT, 'referenceQueries')
 def read_query(filename):
     with open(os.path.join(QUERIES_DIR, filename), 'r') as file:
         return file.read()
+
 def get_conference_name(conference_number):
     if 1 <= conference_number <= 63:
         if conference_number == 1:
@@ -64,6 +69,8 @@ class TursoCursor:
 class TursoConnection:
     def __init__(self, url, auth_token):
         import libsql_client
+        if url and url.startswith("libsql://"):
+            url = "https://" + url[len("libsql://"):]
         self.client = libsql_client.create_client_sync(url=url, auth_token=auth_token)
 
     def cursor(self):

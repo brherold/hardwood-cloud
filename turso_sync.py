@@ -4,7 +4,13 @@ import sqlite3
 import logging
 from typing import List, Set, Optional
 
-# Setup logger
+# Load .env automatically if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+except Exception:
+    pass
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("turso_sync")
 
@@ -18,6 +24,8 @@ def get_turso_client():
     token = os.environ.get("TURSO_AUTH_TOKEN")
     if not url:
         return None
+    if url.startswith("libsql://"):
+        url = "https://" + url[len("libsql://"):]
     try:
         import libsql_client
         return libsql_client.create_client_sync(url=url, auth_token=token)
@@ -29,6 +37,25 @@ def get_local_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def init_schema(client):
+    """Creates all tables and indexes from local SQLite in Turso Cloud."""
+    local_conn = get_local_connection()
+    local_cur = local_conn.cursor()
+    local_cur.execute("SELECT type, name, sql FROM sqlite_master WHERE type IN ('table', 'index') AND name NOT LIKE 'sqlite_%'")
+    items = local_cur.fetchall()
+
+    logger.info(f"Initializing schema ({len(items)} tables/indexes) in Turso...")
+    for obj_type, name, sql in items:
+        if not sql:
+            continue
+        try:
+            logger.info(f"Creating {obj_type} '{name}'...")
+            client.execute(sql)
+        except Exception as e:
+            logger.warning(f"Note on {obj_type} '{name}': {e}")
+    local_conn.close()
+    logger.info("✅ Schema initialization complete!")
 
 def sync_games(client, season_id: int, game_ids: Optional[List[int]] = None, batch_size: int = 100):
     """
@@ -66,12 +93,12 @@ def sync_games(client, season_id: int, game_ids: Optional[List[int]] = None, bat
 
     total_synced = 0
     # Process in chunks of games
-    chunk_size = 20
+    chunk_size = 50
+    batch_size = 500
     for i in range(0, len(to_sync), chunk_size):
         chunk_gids = to_sync[i:i + chunk_size]
         placeholders = ",".join("?" for _ in chunk_gids)
 
-        statements = []
         for table in tables_to_sync:
             local_cur.execute(f"SELECT * FROM \"{table}\" WHERE game_id IN ({placeholders})", chunk_gids)
             rows = local_cur.fetchall()
@@ -82,15 +109,10 @@ def sync_games(client, season_id: int, game_ids: Optional[List[int]] = None, bat
             cols_str = ",".join(f'"{c}"' for c in col_names)
             val_placeholders = ",".join("?" for _ in col_names)
             sql = f'INSERT OR REPLACE INTO "{table}" ({cols_str}) VALUES ({val_placeholders})'
+            statements = [libsql_client.Statement(sql, list(r)) for r in rows]
 
-            for r in rows:
-                statements.append(libsql_client.Statement(sql, list(r)))
-
-        if statements:
-            # Batch execute in chunks of batch_size
             for b in range(0, len(statements), batch_size):
-                sub_batch = statements[b:b + batch_size]
-                client.batch(sub_batch)
+                client.batch(statements[b:b + batch_size])
 
         total_synced += len(chunk_gids)
         logger.info(f"Synced {total_synced}/{len(to_sync)} games...")
@@ -129,20 +151,7 @@ def sync_rosters(client, season_id: int, batch_size: int = 200):
     local_cur = local_conn.cursor()
 
     logger.info(f"Syncing players and players_skills for season {season_id}...")
-    # players_skills has season_id
-    local_cur.execute("SELECT * FROM players_skills WHERE season_id = ?", (season_id,))
-    skills_rows = local_cur.fetchall()
-    if skills_rows:
-        col_names = [c[0] for c in local_cur.description]
-        cols_str = ",".join(f'"{c}"' for c in col_names)
-        val_placeholders = ",".join("?" for _ in col_names)
-        sql = f'INSERT OR REPLACE INTO players_skills ({cols_str}) VALUES ({val_placeholders})'
-        stmts = [libsql_client.Statement(sql, list(r)) for r in skills_rows]
-        for b in range(0, len(stmts), batch_size):
-            client.batch(stmts[b:b + batch_size])
-        logger.info(f"Synced {len(skills_rows)} rows for players_skills.")
-
-    # sync all active players in those skills
+    # 1. Sync all players FIRST (so foreign keys are satisfied)
     local_cur.execute(
         "SELECT DISTINCT p.* FROM players p JOIN players_skills ps ON p.player_id = ps.player_id WHERE ps.season_id = ?",
         (season_id,)
@@ -154,9 +163,22 @@ def sync_rosters(client, season_id: int, batch_size: int = 200):
         val_placeholders = ",".join("?" for _ in col_names)
         sql = f'INSERT OR REPLACE INTO players ({cols_str}) VALUES ({val_placeholders})'
         stmts = [libsql_client.Statement(sql, list(r)) for r in players_rows]
-        for b in range(0, len(stmts), batch_size):
-            client.batch(stmts[b:b + batch_size])
+        for b in range(0, len(stmts), 500):
+            client.batch(stmts[b:b + 500])
         logger.info(f"Synced {len(players_rows)} rows for players.")
+
+    # 2. Sync players_skills SECOND
+    local_cur.execute("SELECT * FROM players_skills WHERE season_id = ?", (season_id,))
+    skills_rows = local_cur.fetchall()
+    if skills_rows:
+        col_names = [c[0] for c in local_cur.description]
+        cols_str = ",".join(f'"{c}"' for c in col_names)
+        val_placeholders = ",".join("?" for _ in col_names)
+        sql = f'INSERT OR REPLACE INTO players_skills ({cols_str}) VALUES ({val_placeholders})'
+        stmts = [libsql_client.Statement(sql, list(r)) for r in skills_rows]
+        for b in range(0, len(stmts), 500):
+            client.batch(stmts[b:b + 500])
+        logger.info(f"Synced {len(skills_rows)} rows for players_skills.")
 
     local_conn.close()
 
@@ -216,9 +238,17 @@ if __name__ == "__main__":
     parser.add_argument("--season", type=int, default=2055, help="Season ID (default: 2055)")
     parser.add_argument("--sync", choices=["games", "rosters", "all"], default="all")
     parser.add_argument("--status", action="store_true", help="Check sync status between Local and Turso")
+    parser.add_argument("--init-schema", action="store_true", help="Initialize all database tables in Turso Cloud")
     args = parser.parse_args()
 
-    if args.status:
+    if args.init_schema:
+        client = get_turso_client()
+        if client:
+            init_schema(client)
+            client.close()
+        else:
+            print("❌ Cannot connect to Turso. Check TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in .env.")
+    elif args.status:
         print_status(args.season)
     else:
         run_sync(season_id=args.season, sync_type=args.sync)

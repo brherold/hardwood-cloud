@@ -4,7 +4,7 @@ WITH total_plays_all AS (
     JOIN games g ON g.game_id = def.game_id
     WHERE def.team_id = ? 
       AND g.season_id = ? 
-      AND g.game_type in ("Non-Conference", "Conference", "Playoff","Tournament")
+      AND g.game_type in ('Non-Conference', 'Conference', 'Playoff', 'Tournament')
 )
 SELECT 
     def.defense_type,
@@ -113,5 +113,5 @@ JOIN games g ON g.game_id = def.game_id
 CROSS JOIN total_plays_all
 WHERE def.team_id = ?
   AND g.season_id = ? 
-  AND g.game_type in ("Non-Conference", "Conference", "Playoff","Tournament")
+  AND g.game_type in ('Non-Conference', 'Conference', 'Playoff', 'Tournament')
 GROUP BY def.defense_type, total_plays_all.grand_total_plays;
