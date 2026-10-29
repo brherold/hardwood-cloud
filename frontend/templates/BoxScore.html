@@ -164,6 +164,7 @@
 
     </head>
     <body>
+        {% include 'navbar.html' %}
         <h1><a href="http://onlinecollegebasketball.org/game/{{game_data.game_id}}"> Game Link</a></h1>
         <h2> Box Score </h2>
         <p> <a href = "/teams/{{game_data.away_team_id}}/{{game_data.season_id}}/College">{{game_data.away_team_name}}</a> </p>

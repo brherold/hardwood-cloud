@@ -163,14 +163,19 @@
 
     </head>
     <body>
-        <h1><a href="http://onlinecollegebasketball.org/team/{{team_stats['team_id']}}" target="_blank">{{team_stats["team_name"]}}</a> {{team_stats["season_id"]}} {{team_stats["game_type"]}} Stats Page</h1>
-        <a href="/teams/{{team_code}}/{{season_id - 1}}/{{game_type}}">
-            <button> Past Season </button>
-        </a>
-        <a href="/teams/{{team_code}}/{{season_id + 1}}/{{game_type}}">
-            <button> Next Season </button>
-        </a>
-        <p>Conference: <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{team_stats.conference_name}}</a></p>
+        {% include 'navbar.html' %}
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px 0; flex-wrap: wrap; gap: 10px;">
+            <h1 style="margin: 0;"><a href="http://onlinecollegebasketball.org/team/{{team_stats['team_id']}}" target="_blank">{{team_stats["team_name"]}}</a> {{team_stats["season_id"]}} {{team_stats["game_type"]}} Stats Page</h1>
+            <div style="display: flex; gap: 8px;">
+                <a href="/teams/{{team_code}}/{{season_id - 1}}/{{game_type}}">
+                    <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">&larr; Prev Season ({{season_id - 1}})</button>
+                </a>
+                <a href="/teams/{{team_code}}/{{season_id + 1}}/{{game_type}}">
+                    <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">Next Season ({{season_id + 1}}) &rarr;</button>
+                </a>
+            </div>
+        </div>
+        <p><b>Conference:</b> <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{ team_stats.conference_name or get_conference_name(team_stats.conference_id) }}</a></p>
         <h2> Roster </h2>
         <table>
             <thead>

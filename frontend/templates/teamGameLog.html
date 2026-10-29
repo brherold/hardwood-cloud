@@ -184,10 +184,19 @@
 
     </head>
     <body>
-        <h1><a href="http://onlinecollegebasketball.org/team/{{game_log[0]['team_id']}}" target="_blank">{{game_log[0]["team_name"]}}</a>  Game Log</h1>
-        
+        {% include 'navbar.html' %}
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px 0; flex-wrap: wrap; gap: 10px;">
+            <h1 style="margin: 0;"><a href="/teams/{{game_log[0]['team_id']}}/{{season_id}}">{{game_log[0]["team_name"]}}</a> Game Log</h1>
+            <div style="display: flex; gap: 8px;">
+                <a href="/teams/{{game_log[0]['team_id']}}/{{season_id - 1}}/gamelog">
+                    <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">&larr; Prev Season ({{season_id - 1}})</button>
+                </a>
+                <a href="/teams/{{game_log[0]['team_id']}}/{{season_id + 1}}/gamelog">
+                    <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">Next Season ({{season_id + 1}}) &rarr;</button>
+                </a>
+            </div>
+        </div>
         <h2> {{season_id}} Games </h2>
-        
         <div class="table-container">
             <div class="scroll-container">
                 <table>

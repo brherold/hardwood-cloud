@@ -1,0 +1,236 @@
+<!-- Shared Hardwood Navigation Bar with Team Autocomplete -->
+<style>
+    .hardwood-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8f9fa;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        padding: 8px 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        font-family: Verdana, sans-serif;
+    }
+    .hardwood-nav .nav-brand {
+        font-size: 16px;
+        font-weight: bold;
+        color: #0645AD;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .hardwood-nav .nav-brand:hover {
+        text-decoration: underline;
+    }
+    .hardwood-nav .nav-search {
+        position: relative;
+        width: 320px;
+        max-width: 100%;
+    }
+    .hardwood-nav .nav-search input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-family: inherit;
+        border: 1px solid #b0b8c0;
+        border-radius: 4px;
+        outline: none;
+        transition: border-color 0.15s ease;
+    }
+    .hardwood-nav .nav-search input:focus {
+        border-color: #0645AD;
+        box-shadow: 0 0 0 2px rgba(6, 69, 173, 0.15);
+    }
+    .hardwood-nav .nav-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid #b0b8c0;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        max-height: 240px;
+        overflow-y: auto;
+        z-index: 9999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        display: none;
+    }
+    .hardwood-nav .nav-dropdown-item {
+        padding: 6px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f0f0f0;
+        color: #222;
+    }
+    .hardwood-nav .nav-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .hardwood-nav .nav-dropdown-item.active,
+    .hardwood-nav .nav-dropdown-item:hover {
+        background: #edf2fc;
+        color: #0645AD;
+        font-weight: bold;
+    }
+    .hardwood-nav .nav-badge {
+        background: #eef;
+        color: #447;
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: normal;
+    }
+    .hardwood-nav .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .hardwood-nav .nav-btn {
+        background: #0645AD;
+        color: #fff;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: bold;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        transition: background 0.15s ease;
+    }
+    .hardwood-nav .nav-btn:hover {
+        background: #043585;
+        text-decoration: none;
+    }
+</style>
+
+<div class="hardwood-nav">
+    <a href="/" class="nav-brand">🏀 Hardwood Stats</a>
+    
+    <div class="nav-search" id="navSearchWrapper">
+        <input
+            type="text"
+            id="navTeamInput"
+            placeholder="🔍 Search team by name or ID..."
+            autocomplete="off"
+        >
+        <div id="navTeamDropdown" class="nav-dropdown"></div>
+    </div>
+
+    <div class="nav-links">
+        <a href="/" class="nav-btn">Home</a>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let teamsList = [];
+        let navActiveIdx = -1;
+        const navInput = document.getElementById("navTeamInput");
+        const navDropdown = document.getElementById("navTeamDropdown");
+        const navWrapper = document.getElementById("navSearchWrapper");
+
+        // Fetch teams once or reuse window cache
+        if (window.HARDWOOD_TEAMS) {
+            teamsList = window.HARDWOOD_TEAMS;
+        } else {
+            fetch("/api/teams")
+                .then(r => r.json())
+                .then(data => {
+                    teamsList = data;
+                    window.HARDWOOD_TEAMS = data;
+                })
+                .catch(err => console.error("Error loading teams for nav:", err));
+        }
+
+        if (navInput) {
+            navInput.addEventListener("input", function() {
+                const val = this.value.trim().toLowerCase();
+                navActiveIdx = -1;
+                if (!val) {
+                    navDropdown.style.display = "none";
+                    navDropdown.innerHTML = "";
+                    return;
+                }
+
+                const matches = teamsList.filter(t => {
+                    const idStr = t.id.toString();
+                    const nameStr = t.name.toLowerCase();
+                    return idStr.startsWith(val) || nameStr.includes(val);
+                }).slice(0, 10);
+
+                if (matches.length === 0) {
+                    navDropdown.style.display = "none";
+                    navDropdown.innerHTML = "";
+                    return;
+                }
+
+                navDropdown.innerHTML = "";
+                matches.forEach(t => {
+                    const item = document.createElement("div");
+                    item.className = "nav-dropdown-item";
+                    item.innerHTML = `<span>${t.name}</span><span class="nav-badge">ID: ${t.id}</span>`;
+                    item.addEventListener("click", () => {
+                        window.location.href = `/teams/${t.id}/2055`;
+                    });
+                    navDropdown.appendChild(item);
+                });
+                navDropdown.style.display = "block";
+            });
+
+            navInput.addEventListener("keydown", function(e) {
+                const items = navDropdown.getElementsByClassName("nav-dropdown-item");
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    if (items.length === 0) return;
+                    navActiveIdx = (navActiveIdx + 1) % items.length;
+                    updateNavActive(items);
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (items.length === 0) return;
+                    navActiveIdx = (navActiveIdx - 1 + items.length) % items.length;
+                    updateNavActive(items);
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (navActiveIdx >= 0 && items[navActiveIdx]) {
+                        items[navActiveIdx].click();
+                    } else if (this.value.trim()) {
+                        const val = this.value.trim().toLowerCase();
+                        if (/^\d+$/.test(val)) {
+                            window.location.href = `/teams/${val}/2055`;
+                        } else {
+                            const exact = teamsList.find(t => t.name.toLowerCase() === val);
+                            const partial = exact || teamsList.find(t => t.name.toLowerCase().includes(val));
+                            if (partial) {
+                                window.location.href = `/teams/${partial.id}/2055`;
+                            }
+                        }
+                    }
+                } else if (e.key === "Escape") {
+                    navDropdown.style.display = "none";
+                }
+            });
+
+            function updateNavActive(items) {
+                Array.from(items).forEach((el, idx) => {
+                    if (idx === navActiveIdx) {
+                        el.classList.add("active");
+                        el.scrollIntoView({ block: "nearest" });
+                    } else {
+                        el.classList.remove("active");
+                    }
+                });
+            }
+
+            document.addEventListener("click", function(e) {
+                if (navWrapper && !navWrapper.contains(e.target)) {
+                    navDropdown.style.display = "none";
+                }
+            });
+        }
+    })();
+</script>

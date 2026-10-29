@@ -12,6 +12,9 @@ from getData import *
 
 app = Flask(__name__, template_folder=os.path.join(FRONTEND_DIR, 'templates'))
 
+ALL_CONFERENCES = [{"id": cid, "name": get_conference_name(cid)} for cid in range(1, 64)]
+app.jinja_env.globals['ALL_CONFERENCES'] = ALL_CONFERENCES
+app.jinja_env.globals['get_conference_name'] = get_conference_name
 @app.route("/health")
 def health():
     db_url = os.environ.get("TURSO_DATABASE_URL")
@@ -34,23 +37,58 @@ def health():
         info["status"] = "error"
         info["error"] = str(e)
     return jsonify(info)
+TEAMS_CACHE = None
+
+def get_all_teams():
+    global TEAMS_CACHE
+    if TEAMS_CACHE is not None:
+        return TEAMS_CACHE
+    try:
+        conn, cur = get_connection()
+        cur.execute("SELECT team_id, team_name FROM teams ORDER BY team_name ASC")
+        rows = cur.fetchall()
+        TEAMS_CACHE = [{"id": int(r["team_id"]), "name": str(r["team_name"])} for r in rows]
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching teams: {e}")
+        TEAMS_CACHE = []
+    return TEAMS_CACHE
+
+@app.route("/api/teams")
+def api_teams():
+    return jsonify(get_all_teams())
 
 @app.route("/", methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        code = request.form["code"]
+        raw_code = request.form.get("code", "").strip()
 
-        if len(code) > 4:
-            game_code = code
-            return redirect(url_for('gameBoxScore', code=game_code))
-        else:
-                
-            team_id = request.form["code"]
-            season_id = 2054
-            return redirect(url_for('teamStats', code=team_id, season_year=season_id))
-    
+        if not raw_code:
+            return redirect(url_for('home'))
+
+        # Numeric input
+        if raw_code.isdigit():
+            val = int(raw_code)
+            if len(raw_code) > 4:
+                return redirect(url_for('gameBoxScore', code=val))
+            else:
+                return redirect(url_for('teamStats', code=val, season_year=2055))
+
+        # Team name search fallback
+        teams = get_all_teams()
+        lower_q = raw_code.lower()
+        match = next((t for t in teams if t["name"].lower() == lower_q), None)
+        if not match:
+            match = next((t for t in teams if t["name"].lower().startswith(lower_q)), None)
+        if not match:
+            match = next((t for t in teams if lower_q in t["name"].lower()), None)
+
+        if match:
+            return redirect(url_for('teamStats', code=match["id"], season_year=2055))
+
+        return render_template('home.html', error=f"Team '{raw_code}' not found.")
+
     return render_template('home.html')
-
 #Route to get to Team Stats for Given year
 @app.route("/teams/<code>/<season_year>/<game_type>")
 @app.route('/teams/<code>/<season_year>', methods=['GET', 'POST'], defaults={'game_type': 'College'})
@@ -121,13 +159,11 @@ def conferencePage(code,season_year):
     conference_id = int(code)
     season_id = int(season_year)
 
+    conf_name = get_conference_name(conference_id)
     team_stats = getConferenceAvg(conference_id,season_id)
     opp_stats = getConferenceOppAvg(conference_id,season_id)
 
-
-
-    return render_template('Conference.html', conference_id = conference_id, season_id = season_id, conf_stats = team_stats, conf_opp_stats = opp_stats)
-    
+    return render_template('Conference.html', conference_id = conference_id, conf_name = conf_name, season_id = season_id, conf_stats = team_stats, conf_opp_stats = opp_stats)
     
 
 #Route to go to Player Page

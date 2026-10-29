@@ -1,14 +1,269 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        
-    </head>
-    <body>
-        <h1>Welcome to Hardwood Stat Webpage</h1>
-        <form action="/" method="POST">
-            <input type="text" name="code" placeholder="Enter Team ID" required>
-            <button type="submit">Submit</button>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardwood Stats</title>
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #fafafa;
+            color: #222;
+        }
+        .container {
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 35px 40px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        h1 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: #111;
+        }
+        p.subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .search-box {
+            position: relative;
+            max-width: 520px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 14px;
+            font-size: 15px;
+            font-family: inherit;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .search-input:focus {
+            border-color: #0645AD;
+        }
+        .search-btn {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: inherit;
+            background-color: #0645AD;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .search-btn:hover {
+            background-color: #043585;
+        }
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+            display: none;
+        }
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-item.active, .dropdown-item:hover {
+            background-color: #edf2fc;
+            color: #0645AD;
+            font-weight: bold;
+        }
+        .team-id-badge {
+            background: #eef;
+            color: #447;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: normal;
+        }
+        .error-msg {
+            margin-top: 15px;
+            padding: 8px 12px;
+            background: #ffe6e6;
+            color: #a00;
+            border: 1px solid #f5c2c2;
+            border-radius: 4px;
+            font-size: 13px;
+            display: inline-block;
+        }
+        .quick-links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #777;
+        }
+        .quick-links a {
+            color: #0645AD;
+            text-decoration: none;
+            margin: 0 6px;
+        }
+        .quick-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏀 Hardwood Basketball Stats</h1>
+        <p class="subtitle">Search 1,000+ teams by name or ID, or jump straight to a game boxscore</p>
+
+        <form action="/" method="POST" id="searchForm" class="search-box">
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="teamInput"
+                    name="code"
+                    class="search-input"
+                    placeholder="Enter Team Name, Team ID, or Game Code..."
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="search-btn">Go</button>
+            </div>
+            <div id="dropdownList" class="dropdown"></div>
         </form>
 
-    </body>
+        {% if error %}
+            <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        <div class="quick-links">
+            <b>Popular Quick Links:</b>
+            <a href="/teams/1/2055">UCLA</a> &bull;
+            <a href="/teams/2/2055">Arizona</a> &bull;
+            <a href="/teams/4/2055">Texas</a> &bull;
+            <a href="/teams/5/2055">Kansas</a> &bull;
+            <a href="/conferences/1/2055">Conference I.1</a>
+        </div>
+    </div>
+
+    <script>
+        let allTeams = [];
+        let activeIdx = -1;
+        const input = document.getElementById("teamInput");
+        const dropdown = document.getElementById("dropdownList");
+        const form = document.getElementById("searchForm");
+
+        // Fetch team list once
+        fetch("/api/teams")
+            .then(res => res.json())
+            .then(data => {
+                allTeams = data;
+            })
+            .catch(err => console.error("Could not load team list:", err));
+
+        input.addEventListener("input", function() {
+            const val = this.value.trim().toLowerCase();
+            activeIdx = -1;
+            if (!val) {
+                dropdown.style.display = "none";
+                dropdown.innerHTML = "";
+                return;
+            }
+
+            // Filter teams by ID prefix or Name substring
+            const matches = allTeams.filter(t => {
+                const idStr = t.id.toString();
+                const nameStr = t.name.toLowerCase();
+                return idStr.startsWith(val) || nameStr.includes(val);
+            }).slice(0, 10); // Top 10 matches
+
+            if (matches.length === 0) {
+                dropdown.style.display = "none";
+                dropdown.innerHTML = "";
+                return;
+            }
+
+            dropdown.innerHTML = "";
+            matches.forEach((t, idx) => {
+                const item = document.createElement("div");
+                item.className = "dropdown-item";
+                item.innerHTML = `<span>${t.name}</span><span class="team-id-badge">ID: ${t.id}</span>`;
+                item.addEventListener("click", () => {
+                    selectTeam(t);
+                });
+                dropdown.appendChild(item);
+            });
+            dropdown.style.display = "block";
+        });
+
+        function selectTeam(team) {
+            window.location.href = `/teams/${team.id}/2055`;
+        }
+
+        input.addEventListener("keydown", function(e) {
+            const items = dropdown.getElementsByClassName("dropdown-item");
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (items.length === 0) return;
+                activeIdx = (activeIdx + 1) % items.length;
+                updateActive(items);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (items.length === 0) return;
+                activeIdx = (activeIdx - 1 + items.length) % items.length;
+                updateActive(items);
+            } else if (e.key === "Enter") {
+                if (activeIdx >= 0 && items[activeIdx]) {
+                    e.preventDefault();
+                    items[activeIdx].click();
+                }
+            } else if (e.key === "Escape") {
+                dropdown.style.display = "none";
+            }
+        });
+
+        function updateActive(items) {
+            Array.from(items).forEach((el, idx) => {
+                if (idx === activeIdx) {
+                    el.classList.add("active");
+                    el.scrollIntoView({ block: "nearest" });
+                } else {
+                    el.classList.remove("active");
+                }
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            if (!form.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+    </script>
+</body>
 </html>
