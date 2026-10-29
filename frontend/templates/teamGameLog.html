@@ -131,6 +131,19 @@
                 border-right: 2.5px solid #444 !important;
             }
 
+
+            th.spacer-col, td.spacer-col {
+                width: 14px;
+                min-width: 14px;
+                max-width: 14px;
+                padding: 0;
+                background-color: #f0f2f5;
+                border-top: none;
+                border-bottom: none;
+                border-left: 1px solid #b0b8c0;
+                border-right: 1px solid #b0b8c0;
+                cursor: default;
+            }
             th[data-no-sort] {
                 cursor: default;
                 color: #000;
@@ -203,8 +216,10 @@
                     <thead>
                         <tr data-no-sort>
                             <th colspan="5" data-no-sort></th>
-                            <th colspan="4" data-no-sort>Score</th>
-                            <th colspan="13" class="separator-right" data-no-sort>Team</th>
+                            <th colspan="6" data-no-sort>Score</th>
+                            <th class="spacer-col" data-no-sort></th>
+                            <th colspan="13" data-no-sort>Team</th>
+                            <th class="spacer-col" data-no-sort></th>
                             <th colspan="12" data-no-sort>Opponent</th>
                         </tr>
                         <tr >
@@ -217,6 +232,9 @@
                             <th>Tm</th>
                             <th>Opp</th>
                             <th>OT</th>
+                            <th>ORTG</th>
+                            <th>DRTG</th>
+                            <th class="spacer-col" data-no-sort></th>
                             
                             <th>Poss</th>
                             <th>FG</th>
@@ -230,7 +248,8 @@
                             <th>3P%</th>
                             <th>FTr</th>
                             <th>TOV%</th>
-                            <th class="separator-right">ORB%</th>
+                            <th>ORB%</th>
+                            <th class="spacer-col" data-no-sort></th>
     
                             <th>FG</th>
                             <th>FGA</th>
@@ -260,6 +279,9 @@
                             <th>Tm</th>
                             <th>Opp</th>
                             <th>OT</th>
+                            <th>ORTG</th>
+                            <th>DRTG</th>
+                            <th class="spacer-col" data-no-sort></th>
                             
                             <th>Poss</th>
                             <th>FG</th>
@@ -273,7 +295,8 @@
                             <th>3P%</th>
                             <th>FTr</th>
                             <th>TOV%</th>
-                            <th class="separator-right">ORB%</th>
+                            <th>ORB%</th>
+                            <th class="spacer-col" data-no-sort></th>
     
                             <th>FG</th>
                             <th>FGA</th>
@@ -313,6 +336,9 @@
                             {% else %}
                             {% endif %}
                         </td>
+                        <td>{{ "%.1f"|format(game.ORTG|default(0)) }}</td>
+                        <td>{{ "%.1f"|format(game.DRTG|default(0)) }}</td>
+                        <td class="spacer-col"></td>
                         <td>{{ game.Poss|round(1) }}</td>
                         <td>{{ game.FG_M|round(1) }}</td>
                         <td>{{ game.FG_A|round(1) }}</td>
@@ -325,8 +351,8 @@
                         <td>{{ "%.3f"|format(game._3P_P|default(0))|replace("0.",".") }}</td>
                         <td>{{ "%.3f"|format(game.FTr|default(0))|replace("0.",".") }}</td>
                         <td>{{ "%.3f"|format(game.TOV_P|default(0))|replace("0.",".") }}</td>
-                        <td class="separator-right">{{ "%.3f"|format(game.ORB_P|default(0))|replace("0.",".") }}</td>
-                            
+                        <td>{{ "%.3f"|format(game.ORB_P|default(0))|replace("0.",".") }}</td>
+                        <td class="spacer-col"></td>
                         <td>{{ game.O_FG_M|round(1) }}</td>
                         <td>{{ game.O_FG_A|round(1) }}</td>
                         <td>{{ "%.3f"|format(game.O_eFG_P|default(0))|replace("0.",".") }}</td>

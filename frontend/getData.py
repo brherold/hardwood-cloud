@@ -407,10 +407,19 @@ def getTeamGameLog(team_id, season_id):
     for game_number, game in enumerate(rows):
         game["G_Num"] = game_number + 1 #stars at 1
         
-        #Convert game date to string
+        # Convert game date to string
         game_date = str(game["game_date"])
         formatted_date = f"{game_date[:4]}-{game_date[4:6]}-{game_date[6:]}"
         game["game_date"] = formatted_date
+
+        # Calculate ORTG and DRTG
+        poss = game.get("Poss") or 0
+        if poss > 0:
+            game["ORTG"] = round((game.get("PTS", 0) / poss) * 100, 1)
+            game["DRTG"] = round((game.get("O_PTS", 0) / poss) * 100, 1)
+        else:
+            game["ORTG"] = 0.0
+            game["DRTG"] = 0.0
 
     conn.close()
 
