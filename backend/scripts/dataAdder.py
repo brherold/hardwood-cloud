@@ -42,20 +42,27 @@ If game not fully added in DB:
 
 '''
 
-'''
-driver = open_hardwood_home_manual()
-print("Driver opened and ready to use.")
-with app.app_context():
-    add_game_helper(1175784)
-'''
-
-
-
+def get_current_max_regular_games(season_id):
+    """Finds the maximum regular season games played so far by any team in this season."""
+    try:
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        db_file = os.path.join(root_dir, "instance", "basketball.db")
+        if os.path.exists(db_file):
+            conn = sqlite3.connect(db_file)
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT MAX(GP) FROM team_avg 
+                WHERE season_id = ? AND game_type = 'College' AND stat_type = 'team'
+            """, (season_id,))
+            row = cur.fetchone()
+            conn.close()
+            if row and row[0] is not None and row[0] > 0:
+                return int(row[0])
+    except Exception as e:
+        print(f"Note detecting max games from DB: {e}")
+    return None
 
 #Gets All games from team_ID and current season
-#team_games_played(team_ID ,current_season, post_season)
-#'''
-
 def add_games_team(team_id, PostSeason=None, num_games=None):
     count = 0
 
@@ -73,17 +80,16 @@ def add_games_team(team_id, PostSeason=None, num_games=None):
     if not is_post_season:
         if target_count is None:
             target_count = globals().get("num_games", None)
-        if target_count is None and sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
-            try:
-                user_input = input("Enter number of regular season games that should be the count: ").strip()
-                if user_input:
-                    target_count = int(user_input)
-                    globals()["num_games"] = target_count
-            except (EOFError, OSError, ValueError):
-                target_count = None
-    if is_post_season:
-        delete_schedule_cache(team_id, current_season)
+        if target_count is None:
+            prev_max = get_current_max_regular_games(current_season)
+            if prev_max is not None:
+                # Target count is previous day's regular count + 1 new game + 3 exhibition games = prev_max + 4 (or prev_max + 3+1)
+                target_count = prev_max + 4
+                globals()["num_games"] = target_count
+                print(f"📊 Auto-targeting schedule game count: {target_count} (DB regular games: {prev_max} + 1 new game + 3 exhibition)")
 
+    # Always clear schedule cache so fresh live schedule is pulled for today's new game
+    delete_schedule_cache(team_id, current_season)
     # ONE app context for the entire batch
     with app.app_context():
         for game in team_games_played(team_id, current_season, is_post_season):
@@ -162,13 +168,22 @@ if __name__ == "__main__":
     team_list = [args.team] if args.team else list(range(args.start_team, args.end_team + 1))
     print(f"Processing {len(team_list)} team(s)...")
 
+    # Auto-calculate game count (+1 of previous day) if not explicitly passed
+    target_num_games = args.num_games
+    if target_num_games is None and not args.post_season and args.action in ("games", "both"):
+        prev_max = get_current_max_regular_games(args.season)
+        if prev_max is not None:
+            # Target count is previous day's regular count + 1 new game + 3 exhibition games = prev_max + 4
+            target_num_games = prev_max + 4
+            print(f"📊 Previous day regular game count: {prev_max}. Setting target schedule count to {target_num_games} (+1 new game + 3 exhibition).")
+        globals()["num_games"] = target_num_games
+
     try:
         # 1. Games
         if args.action in ("games", "both"):
             print("--- Processing Games ---")
             for team in team_list:
-                add_games_team(team, PostSeason=args.post_season, num_games=args.num_games)
-
+                add_games_team(team, PostSeason=args.post_season, num_games=target_num_games)
         # 2. Rosters
         if args.action in ("rosters", "both"):
             print("--- Processing Rosters (clearing roster caches for fresh pull) ---")
