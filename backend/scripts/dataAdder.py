@@ -150,8 +150,8 @@ if __name__ == "__main__":
                         help="Single team ID to process (1-1008)")
     parser.add_argument("--start-team", type=int, default=1,
                         help="Start team ID (default: 1)")
-    parser.add_argument("--end-team", type=int, default=1008,
-                        help="End team ID (default: 1008)")
+    parser.add_argument("--end-team", type=int, default=1009,
+                        help="End team ID (default: 1009)")
     parser.add_argument("--no-sync", action="store_true", default=False,
                         help="Skip syncing changes to Turso cloud database")
     args = parser.parse_args()
@@ -171,10 +171,10 @@ if __name__ == "__main__":
 
         # 2. Rosters
         if args.action in ("rosters", "both"):
-            print("--- Processing Rosters ---")
+            print("--- Processing Rosters (clearing roster caches for fresh pull) ---")
             for team in team_list:
+                delete_roster_cache(team, args.season)
                 updateTeamRoster(team)
-
     finally:
         try:
             quit_driver()
