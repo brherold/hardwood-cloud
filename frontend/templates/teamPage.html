@@ -114,6 +114,10 @@
             tr[data-no-sort]:hover {
                 background-color: #e0e0e0; /* Slightly darker grey on hover */
             }
+
+            .highlight-player, tr.highlight-player td, tr.highlight-player td a {
+                font-weight: bold !important;
+            }
         </style>
         
         <script>
@@ -177,11 +181,15 @@
         </div>
         <p><b>Conference:</b> <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{ team_stats.conference_name or get_conference_name(team_stats.conference_id) }}</a></p>
         <h2> Roster </h2>
+        <p style="font-size: 11px; color: #555; margin: 4px 0 8px 0;">
+            <b>Bolded players</b> played in &ge; 50% of team games ({{ (team_stats.GP * 0.5)|round(1) }}+ GP).
+        </p>
         <div class="scroll-container" style="overflow-x: auto; max-width: 100%; margin: 8px 0 20px 0;">
             <table>
                 <thead>
                     <tr>
                         <th>Player</th>
+                        <th>Position</th>
                         <th>Pos</th>
                         <th>Class</th>
                         <th>Ht</th>
@@ -209,8 +217,9 @@
                 </thead>
                 <tbody>
                 {% for player in roster %}
-                    <tr>
+                    <tr {% if player.highlight %}class="highlight-player"{% endif %}>
                         <td><a href="http://onlinecollegebasketball.org/player/{{player.player_id}}" target="_blank">{{ player.name }}</a></td>
+                        <td>{{ player.Primary_Position or '-' }}</td>
                         <td>{{ player.Pos }}</td>
                         <td>{{ player.Class }}</td>
                         <td>{{ player.height }}</td>

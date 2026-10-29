@@ -144,9 +144,18 @@ def teamStats(code, season_year, game_type):
         player["VORP"] = ((player["EPM"] + 3) * player["Min"] * (player["GP"]))/denom
         #player["WAR"] = player["VORP"] * .1205 * team_avg["GP"] / 5
 
+    # Map player GP and Primary Position from team_player_avg
+    player_gp_map = {p["player_id"]: p.get("GP", 0) for p in team_player_avg}
+    player_pos_map = {p["player_id"]: p.get("Primary_Position", "-") for p in team_player_avg}
+    team_gp = team_avg.get("GP", 0) or 0
+    gp_threshold = team_gp * 0.5
 
-
-
+    for player in roster:
+        pid = player.get("player_id")
+        p_gp = player_gp_map.get(pid, 0)
+        player["GP"] = p_gp
+        player["Primary_Position"] = player_pos_map.get(pid, "-")
+        player["highlight"] = (p_gp >= gp_threshold and team_gp > 0)
     return render_template('teamPage.html', team_code= code, season_id = season_id, game_type = game_type, roster=roster, team_stats=team_avg, opp_stats=opp_avg, player_stats=team_player_avg, team_offense = team_offense, team_defense=team_defense, team_rank=team_rank, opp_rank=opp_rank)
 
 #Route to get to Game Log for given year
