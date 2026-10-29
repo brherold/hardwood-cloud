@@ -12,6 +12,29 @@ from getData import *
 
 app = Flask(__name__, template_folder=os.path.join(FRONTEND_DIR, 'templates'))
 
+@app.route("/health")
+def health():
+    db_url = os.environ.get("TURSO_DATABASE_URL")
+    auth_token = os.environ.get("TURSO_AUTH_TOKEN")
+    info = {
+        "TURSO_DATABASE_URL_set": bool(db_url),
+        "TURSO_DATABASE_URL_masked": (db_url[:25] + "...") if db_url else None,
+        "TURSO_AUTH_TOKEN_set": bool(auth_token),
+        "error": None,
+        "teams_count": None
+    }
+    try:
+        conn, cur = get_connection()
+        cur.execute("SELECT COUNT(*) FROM teams")
+        row = cur.fetchone()
+        info["teams_count"] = row[0] if row else None
+        conn.close()
+        info["status"] = "ok"
+    except Exception as e:
+        info["status"] = "error"
+        info["error"] = str(e)
+    return jsonify(info)
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     if request.method == "POST":
