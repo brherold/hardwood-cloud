@@ -173,12 +173,16 @@
 
                 <!-- Season navigation -->
                 <div style="display: flex; gap: 8px;">
+                    {% if season_id > 2050 %}
                     <a href="/conferences/{{conference_id}}/{{season_id - 1}}">
                         <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; cursor: pointer; background: #fff; border: 1px solid #aaa; border-radius: 4px;">&larr; Prev Season ({{season_id - 1}})</button>
                     </a>
+                    {% endif %}
+                    {% if season_id < get_max_season() %}
                     <a href="/conferences/{{conference_id}}/{{season_id + 1}}">
                         <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; cursor: pointer; background: #fff; border: 1px solid #aaa; border-radius: 4px;">Next Season ({{season_id + 1}}) &rarr;</button>
                     </a>
+                    {% endif %}
                 </div>
             </div>
 

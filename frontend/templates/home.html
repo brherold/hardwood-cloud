@@ -3,64 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hardwood Stats</title>
+    <title>Hardwood Stats - College Basketball Analytics</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: Verdana, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 30px;
-            background-color: #fafafa;
-            color: #222;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f9fa;
+            color: #24292f;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 90vh;
         }
         .container {
             background: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 35px 40px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            border: 1px solid #d0d7de;
+            border-radius: 10px;
+            max-width: 680px;
+            width: 100%;
+            padding: 40px 44px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
-        h1 {
-            font-size: 26px;
-            margin-bottom: 8px;
-            color: #111;
+        .coverage-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #eef4fe;
+            color: #0645ad;
+            border: 1px solid #c8daf8;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+            letter-spacing: 0.2px;
+        }
+        .coverage-badge .badge-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #0645ad;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        h1.main-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            color: #0f172a;
+            letter-spacing: -0.4px;
         }
         p.subtitle {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 25px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #57606a;
+            margin: 0 auto 28px auto;
+            max-width: 520px;
+        }
+        p.subtitle a.ext-link {
+            color: #0645ad;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        p.subtitle a.ext-link:hover {
+            text-decoration: underline;
         }
         .search-box {
             position: relative;
-            max-width: 520px;
+            max-width: 540px;
             margin: 0 auto;
             text-align: left;
         }
         .input-group {
             display: flex;
             gap: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            border-radius: 6px;
         }
         .search-input {
             flex: 1;
-            padding: 12px 14px;
-            font-size: 15px;
+            padding: 13px 16px;
+            font-size: 14.5px;
             font-family: inherit;
-            border: 2px solid #ccc;
+            border: 1.5px solid #c0c6cc;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.15s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            background: #ffffff;
+            color: #111;
         }
         .search-input:focus {
-            border-color: #0645AD;
+            border-color: #0645ad;
+            box-shadow: 0 0 0 3px rgba(6, 69, 173, 0.12);
         }
         .search-btn {
-            padding: 12px 20px;
+            padding: 13px 24px;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
             font-family: inherit;
-            background-color: #0645AD;
-            color: white;
+            background-color: #0645ad;
+            color: #ffffff;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -69,78 +115,136 @@
         .search-btn:hover {
             background-color: #043585;
         }
+        .search-hint {
+            font-size: 11.5px;
+            color: #6e7781;
+            margin-top: 8px;
+            padding-left: 2px;
+        }
         .dropdown {
             position: absolute;
-            top: 100%;
+            top: 50px;
             left: 0;
             right: 0;
-            background: white;
-            border: 1px solid #ccc;
+            background: #ffffff;
+            border: 1px solid #c0c6cc;
             border-top: none;
             border-radius: 0 0 6px 6px;
             max-height: 280px;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
             display: none;
         }
         .dropdown-item {
             padding: 10px 14px;
             cursor: pointer;
             font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f2f5;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #24292f;
         }
         .dropdown-item:last-child {
             border-bottom: none;
         }
         .dropdown-item.active, .dropdown-item:hover {
-            background-color: #edf2fc;
-            color: #0645AD;
-            font-weight: bold;
+            background-color: #edf3fc;
+            color: #0645ad;
+            font-weight: 600;
         }
         .team-id-badge {
-            background: #eef;
-            color: #447;
+            background: #eef2fa;
+            color: #4b5563;
             font-size: 11px;
-            padding: 2px 6px;
+            padding: 2px 7px;
             border-radius: 4px;
-            font-weight: normal;
+            font-weight: 500;
         }
         .error-msg {
-            margin-top: 15px;
-            padding: 8px 12px;
-            background: #ffe6e6;
-            color: #a00;
-            border: 1px solid #f5c2c2;
-            border-radius: 4px;
-            font-size: 13px;
+            margin-top: 18px;
+            padding: 9px 16px;
+            background: #ffebe9;
+            color: #cf222e;
+            border: 1px solid #ff8182;
+            border-radius: 6px;
+            font-size: 12.5px;
             display: inline-block;
         }
-        .quick-links {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+        .quick-links-section {
+            margin-top: 36px;
+            padding-top: 22px;
+            border-top: 1px solid #e1e4e8;
+        }
+        .quick-links-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6e7781;
+            margin-bottom: 12px;
+        }
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 20px;
             font-size: 12px;
-            color: #777;
-        }
-        .quick-links a {
-            color: #0645AD;
+            font-weight: 600;
+            color: #24292f;
             text-decoration: none;
-            margin: 0 6px;
+            transition: all 0.15s ease;
         }
-        .quick-links a:hover {
-            text-decoration: underline;
+        .chip:hover {
+            background: #ffffff;
+            border-color: #0645ad;
+            color: #0645ad;
+            box-shadow: 0 1px 3px rgba(6, 69, 173, 0.15);
+            text-decoration: none;
+        }
+        .chip .chip-id {
+            color: #6e7781;
+            font-size: 10.5px;
+            font-weight: normal;
+        }
+        .chip-ext {
+            background: #edf3fc;
+            border-color: #bfd4f6;
+            color: #0645ad;
+        }
+        .chip-ext:hover {
+            background: #0645ad;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏀 Hardwood Basketball Stats</h1>
-        <p class="subtitle">Search 1,000+ teams by name or ID, or jump straight to a game boxscore</p>
+        <!-- Coverage Pill Badge -->
+        <div class="coverage-badge">
+            <span class="badge-dot"></span> Coverage: Season 2050+
+        </div>
 
+        <!-- Title & Subtitle -->
+        <h1 class="main-title">🏀 Hardwood Basketball Stats</h1>
+        <p class="subtitle">
+            Advanced analytics, boxscores, and depth charts for 
+            <a href="https://onlinecollegebasketball.org/" target="_blank" rel="noopener noreferrer" class="ext-link">
+                Hardwood ↗
+            </a>
+        </p>
+
+        <!-- Search Form -->
         <form action="/" method="POST" id="searchForm" class="search-box">
             <div class="input-group">
                 <input
@@ -148,25 +252,31 @@
                     id="teamInput"
                     name="code"
                     class="search-input"
-                    placeholder="Enter Team Name, Team ID, or Game Code..."
+                    placeholder="Search by Team Name, ID, or Game Code..."
                     autocomplete="off"
                     required
                 >
-                <button type="submit" class="search-btn">Go</button>
+                <button type="submit" class="search-btn">Search</button>
             </div>
             <div id="dropdownList" class="dropdown"></div>
+            <div class="search-hint">
+                Search 1,000+ teams by name (e.g. <em>UCLA</em>, <em>Duke</em>), team ID, or 7-digit game code
+            </div>
         </form>
 
         {% if error %}
             <div class="error-msg">{{ error }}</div>
         {% endif %}
 
-        <div class="quick-links">
-            <b>Example Quick Links:</b>
-            <a href="/teams/533/2055">Assumption</a> &bull;
-            <a href="/teams/540/2055">American International</a> &bull;
-            <a href="/teams/379/2055">Bowie State</a> &bull;
-            <a href="/conferences/1/2055">Conference I.1</a>
+        <!-- Example Quick Links Chips -->
+        <div class="quick-links-section">
+            <div class="quick-links-title">Example Quick Links</div>
+            <div class="chips-container">
+                <a href="/teams/533/2055" class="chip">Assumption <span class="chip-id">#533</span></a>
+                <a href="/teams/540/2055" class="chip">American International <span class="chip-id">#540</span></a>
+                <a href="/teams/379/2055" class="chip">Bowie State <span class="chip-id">#379</span></a>
+                <a href="/conferences/1/2055" class="chip">Conference I.1</a>
+            </div>
         </div>
     </div>
 
@@ -208,7 +318,7 @@
             }
 
             dropdown.innerHTML = "";
-            matches.forEach((t, idx) => {
+            matches.forEach((t) => {
                 const item = document.createElement("div");
                 item.className = "dropdown-item";
                 item.innerHTML = `<span>${t.name}</span><span class="team-id-badge">ID: ${t.id}</span>`;

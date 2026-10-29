@@ -171,12 +171,16 @@
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px 0; flex-wrap: wrap; gap: 10px;">
             <h1 style="margin: 0;"><a href="http://onlinecollegebasketball.org/team/{{team_stats['team_id']}}" target="_blank">{{team_stats["team_name"]}}</a> {{team_stats["season_id"]}} {{team_stats["game_type"]}} Stats Page</h1>
             <div style="display: flex; gap: 8px;">
+                {% if season_id > 2050 %}
                 <a href="/teams/{{team_code}}/{{season_id - 1}}/{{game_type}}">
                     <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">&larr; Prev Season ({{season_id - 1}})</button>
                 </a>
+                {% endif %}
+                {% if season_id < get_max_season() %}
                 <a href="/teams/{{team_code}}/{{season_id + 1}}/{{game_type}}">
                     <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">Next Season ({{season_id + 1}}) &rarr;</button>
                 </a>
+                {% endif %}
             </div>
         </div>
         <p><b>Conference:</b> <a href="/conferences/{{team_stats.conference_id}}/{{season_id}}">{{ team_stats.conference_name or get_conference_name(team_stats.conference_id) }}</a></p>
@@ -1186,7 +1190,6 @@
             </tbody>
         </table>
 
-          <a href="{{ url_for('home') }}"><button>Home</button></a>
           </body>
           </html>
           <script>

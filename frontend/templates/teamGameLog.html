@@ -201,12 +201,16 @@
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px 0; flex-wrap: wrap; gap: 10px;">
             <h1 style="margin: 0;"><a href="/teams/{{game_log[0]['team_id']}}/{{season_id}}">{{game_log[0]["team_name"]}}</a> Game Log</h1>
             <div style="display: flex; gap: 8px;">
+                {% if season_id > 2050 %}
                 <a href="/teams/{{game_log[0]['team_id']}}/{{season_id - 1}}/gamelog">
                     <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">&larr; Prev Season ({{season_id - 1}})</button>
                 </a>
+                {% endif %}
+                {% if season_id < get_max_season() %}
                 <a href="/teams/{{game_log[0]['team_id']}}/{{season_id + 1}}/gamelog">
                     <button style="padding: 6px 14px; font-size: 13px; font-weight: bold; font-family: inherit; cursor: pointer; background: #eee; border: 1px solid #aaa; border-radius: 4px;">Next Season ({{season_id + 1}}) &rarr;</button>
                 </a>
+                {% endif %}
             </div>
         </div>
         <h2> {{season_id}} Games </h2>
@@ -216,9 +220,9 @@
                     <thead>
                         <tr data-no-sort>
                             <th colspan="5" data-no-sort></th>
-                            <th colspan="6" data-no-sort>Score</th>
+                            <th colspan="7" data-no-sort>Score</th>
                             <th class="spacer-col" data-no-sort></th>
-                            <th colspan="13" data-no-sort>Team</th>
+                            <th colspan="12" data-no-sort>Team</th>
                             <th class="spacer-col" data-no-sort></th>
                             <th colspan="12" data-no-sort>Opponent</th>
                         </tr>
@@ -234,9 +238,9 @@
                             <th>OT</th>
                             <th>ORTG</th>
                             <th>DRTG</th>
+                            <th>Poss</th>
                             <th class="spacer-col" data-no-sort></th>
                             
-                            <th>Poss</th>
                             <th>FG</th>
                             <th>FGA</th>
                             <th>eFG%</th>
@@ -281,9 +285,9 @@
                             <th>OT</th>
                             <th>ORTG</th>
                             <th>DRTG</th>
+                            <th>Poss</th>
                             <th class="spacer-col" data-no-sort></th>
                             
-                            <th>Poss</th>
                             <th>FG</th>
                             <th>FGA</th>
                             <th>eFG%</th>
@@ -338,8 +342,8 @@
                         </td>
                         <td>{{ "%.1f"|format(game.ORTG|default(0)) }}</td>
                         <td>{{ "%.1f"|format(game.DRTG|default(0)) }}</td>
-                        <td class="spacer-col"></td>
                         <td>{{ game.Poss|round(1) }}</td>
+                        <td class="spacer-col"></td>
                         <td>{{ game.FG_M|round(1) }}</td>
                         <td>{{ game.FG_A|round(1) }}</td>
                         <td>{{ "%.3f"|format(game.eFG_P|default(0))|replace("0.",".") }}</td>
@@ -376,7 +380,6 @@
 
 
 
-          <a href="{{ url_for('home') }}"><button>Home</button></a>
           </body>
           </html>
         

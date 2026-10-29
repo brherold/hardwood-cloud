@@ -44,6 +44,25 @@ start_keep_alive()
 ALL_CONFERENCES = [{"id": cid, "name": get_conference_name(cid)} for cid in range(1, 64)]
 app.jinja_env.globals['ALL_CONFERENCES'] = ALL_CONFERENCES
 app.jinja_env.globals['get_conference_name'] = get_conference_name
+
+_MAX_SEASON_CACHE = None
+def get_max_season():
+    global _MAX_SEASON_CACHE
+    if _MAX_SEASON_CACHE is not None:
+        return _MAX_SEASON_CACHE
+    try:
+        conn, cur = get_connection()
+        cur.execute("SELECT MAX(season_id) FROM games")
+        row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            _MAX_SEASON_CACHE = int(row[0])
+            return _MAX_SEASON_CACHE
+    except Exception:
+        pass
+    return 2055
+
+app.jinja_env.globals['get_max_season'] = get_max_season
 @app.route("/health")
 def health():
     db_url = os.environ.get("TURSO_DATABASE_URL")
