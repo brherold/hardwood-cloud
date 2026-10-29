@@ -813,8 +813,8 @@
                       <td>{{ "%.3f"|format(player.Mid_P|default(0))|replace("0.",".") }}</td>
                       <td>{{ "%.3f"|format(player._3P_P|default(0))|replace("0.",".") }}</td>
 
-                      <td>{{ player.DR_M|default(0)|int }}</td>
-                      <td>{{ player.DR_A|default(0)|int }}</td>
+                      <td>{{ "%.1f"|format(player.DR_M|default(0)) }}</td>
+                      <td>{{ "%.1f"|format(player.DR_A|default(0)) }}</td>
                       <td>{{ "%.3f"|format(player.DR_P|default(0))|replace("0.",".") }}</td>
                 </tr>
             {% endfor %}
@@ -842,8 +842,8 @@
                   <td>{{ "%.3f"|format(team_stats.Mid_P|default(0))|replace("0.",".") }}</td>
                   <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
 
-                  <td>{{ team_stats.DR_M|default(0)|int }}</td>
-                  <td>{{ team_stats.DR_A|default(0)|int }}</td>
+                  <td>{{ "%.1f"|format(team_stats.DR_M|default(0)) }}</td>
+                  <td>{{ "%.1f"|format(team_stats.DR_A|default(0)) }}</td>
                   <td>{{ "%.3f"|format(team_stats.DR_P|default(0))|replace("0.",".") }}</td>
             </tr>
 
@@ -1025,8 +1025,8 @@
                         <td>{{ "%.3f"|format(def_stat.FTr|default(0))|replace("0.",".") }}</td>
                         <td>{{ "%.3f"|format(def_stat.FT_P|default(0))|replace("0.",".") }}</td>
 
-                        <td>{{ def_stat.DR_M|default(0)|int }}</td>
-                        <td>{{ def_stat.DR_A|default(0)|int }}</td>
+                        <td>{{ "%.1f"|format(def_stat.DR_M|default(0)) }}</td>
+                        <td>{{ "%.1f"|format(def_stat.DR_A|default(0)) }}</td>
                         <td>{{ "%.3f"|format(def_stat.DR_P|default(0))|replace("0.",".") }}</td>
                     </tr>
                 {% endfor %}
@@ -1093,8 +1093,8 @@
                         <td>{{ "%.3f"|format(def_stat.FTr|default(0))|replace("0.",".") }}</td>
                         <td>{{ "%.3f"|format(def_stat.FT_P|default(0))|replace("0.",".") }}</td>
 
-                        <td>{{ def_stat.DR_M|default(0)|int }}</td>
-                        <td>{{ def_stat.DR_A|default(0)|int }}</td>
+                        <td>{{ "%.1f"|format(def_stat.DR_M|default(0)) }}</td>
+                        <td>{{ "%.1f"|format(def_stat.DR_A|default(0)) }}</td>
                         <td>{{ "%.3f"|format(def_stat.DR_P|default(0))|replace("0.",".") }}</td>
                     </tr>
                 {% endfor %}

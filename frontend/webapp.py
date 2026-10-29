@@ -1,5 +1,8 @@
 import os
 import sys
+import threading
+import time
+import urllib.request
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +14,32 @@ from getData import *
 #Keep Note (Website shown EPM is db BPM)
 
 app = Flask(__name__, template_folder=os.path.join(FRONTEND_DIR, 'templates'))
+
+def start_keep_alive():
+    """Background keep-alive thread that pings the app's public URL every 10 minutes on Render."""
+    if not (os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("PING_URL")):
+        return
+
+    url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("PING_URL") or "https://hardwood-cloud.onrender.com"
+    if not url.startswith("http"):
+        url = "https://" + url
+    ping_target = url.rstrip("/") + "/health"
+
+    def ping_worker():
+        time.sleep(120)  # Wait 2 minutes after startup before first ping
+        while True:
+            try:
+                req = urllib.request.Request(ping_target, headers={"User-Agent": "HardwoodKeepAlive/1.0"})
+                with urllib.request.urlopen(req, timeout=15):
+                    pass
+            except Exception:
+                pass
+            time.sleep(600)  # 10 minutes
+
+    t = threading.Thread(target=ping_worker, daemon=True)
+    t.start()
+
+start_keep_alive()
 
 ALL_CONFERENCES = [{"id": cid, "name": get_conference_name(cid)} for cid in range(1, 64)]
 app.jinja_env.globals['ALL_CONFERENCES'] = ALL_CONFERENCES

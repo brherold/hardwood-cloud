@@ -537,8 +537,8 @@
                     <td>{{ "%.3f"|format(team_stats._3P_P|default(0))|replace("0.",".") }}</td>
                     <td></td>
 
-                    <td>{{ team_stats.DR_M|default(0)|int }}</td>
-                    <td>{{ team_stats.DR_A|default(0)|int }}</td>
+                    <td>{{ "%.1f"|format(team_stats.DR_M|default(0)) }}</td>
+                    <td>{{ "%.1f"|format(team_stats.DR_A|default(0)) }}</td>
                     <td>{{ "%.3f"|format(team_stats.DR_P|default(0))|replace("0.",".") }}</td>
                 </tr>
             {% endfor %}
